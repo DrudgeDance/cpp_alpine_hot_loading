@@ -31,4 +31,4 @@ target_link_options(your_app PRIVATE
     -static
     -static-libgcc
     -static-libstdc++
-) 
+)  

@@ -1,15 +1,46 @@
 from conan import ConanFile
-from conan.tools.cmake import CMake, cmake_layout
+from conan.tools.cmake import CMake, CMakeToolchain
 
 class YourAppConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
-    generators = "CMakeToolchain", "CMakeDeps"
+    generators = "CMakeDeps"
+    options = {
+        "shared": [True, False],
+        "fPIC": [True, False],
+    }
+    default_options = {
+        "shared": False,
+        "fPIC": True,
+        "*:shared": False,  # Force all dependencies to be static
+    }
 
     def requirements(self):
         self.requires("boost/1.83.0")
 
+    def config_options(self):
+        if self.settings.os == "Windows":
+            del self.options.fPIC
+
     def layout(self):
-        cmake_layout(self)
+        # Define a flat build structure
+        self.folders.source = "."
+        self.folders.build = "build"
+        self.folders.generators = "generators"
+        
+        # Configure cpp layout
+        self.cpp.source.includedirs = ["include"]
+        self.cpp.build.libdirs = ["lib"]
+        self.cpp.build.bindirs = ["bin"]
+        
+        # Set build info
+        self.cpp.build.objects = ["obj"]
+        self.cpp.build.modules = ["generators"]
+
+    def generate(self):
+        tc = CMakeToolchain(self, build_folder="build")
+        tc.variables["CMAKE_POSITION_INDEPENDENT_CODE"] = self.options.get_safe("fPIC", True)
+        tc.variables["BUILD_SHARED_LIBS"] = False
+        tc.generate()
 
     def build(self):
         cmake = CMake(self)
