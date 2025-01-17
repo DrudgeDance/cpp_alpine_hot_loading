@@ -1,0 +1,25 @@
+{
+    "name": "cppdev",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "args": {
+            "USERNAME": "developer",
+            "USER_UID": "1000",
+            "USER_GID": "1000",
+            "WORKSPACE_NAME": "cppdev",
+            "SERVICE_USER": "appuser",
+            "SERVICE_GROUP": "appgroup",
+            "SERVICE_UID": "2000",
+            "SERVICE_GID": "2000"
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode.cpptools",
+                "ms-vscode.cmake-tools"
+            ]
+        }
+    },
+    "remoteUser": "developer"
+} 
