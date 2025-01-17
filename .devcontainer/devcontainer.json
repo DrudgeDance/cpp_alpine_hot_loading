@@ -7,7 +7,9 @@
         "vscode": {
             "extensions": [
                 "ms-vscode.cpptools",
-                "ms-vscode.cmake-tools"
+                "ms-vscode.cmake-tools",
+                "ms-python.python",
+                "ms-azuretools.vscode-docker"
             ],
             "settings": {
                 "C_Cpp.default.compilerPath": "/usr/bin/g++",
