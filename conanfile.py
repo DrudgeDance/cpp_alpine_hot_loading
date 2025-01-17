@@ -29,9 +29,9 @@ class YourAppConan(ConanFile):
         
         # Configure cpp layout
         self.cpp.source.includedirs = ["include"]
-        self.cpp.build.libdirs = ["lib"]
+        self.cpp.build.libdirs = ["build/lib"]
         self.cpp.build.bindirs = ["bin"]
-        self.cpp.build.objects = ["obj"]
+        self.cpp.build.objects = ["build/obj"]
 
     def generate(self):
         tc = CMakeToolchain(self)

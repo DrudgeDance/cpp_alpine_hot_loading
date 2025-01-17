@@ -4,9 +4,9 @@ set -e
 # Change to project root directory
 cd "$(dirname "$0")/.."
 
-# Clean build directory
-rm -rf build
-mkdir -p build/generators build/lib build/bin build/obj
+# Clean directories
+rm -rf build bin
+mkdir -p build/generators build/lib build/obj bin
 
 echo "Installing dependencies with conan..."
 conan install . \
@@ -14,9 +14,6 @@ conan install . \
     --build=missing \
     -s build_type=Release \
     -g "CMakeDeps"
-
-# Move generator files to the correct location
-mv build/generators/* build/generators/ 2>/dev/null || true
 
 echo "Configuring with CMake..."
 cmake -B build -S . \
@@ -31,10 +28,10 @@ cmake -B build -S . \
 echo "Building..."
 cmake --build build
 
-echo "Build complete! Binary is at build/your_app"
+echo "Build complete! Binary is at bin/your_app"
 
 echo -e "\nChecking if binary is statically linked:"
-cd build
+cd bin
 if ! ldd your_app &> /dev/null; then
     echo "Success: Binary appears to be fully static!"
     
