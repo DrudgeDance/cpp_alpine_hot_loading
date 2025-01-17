@@ -1,25 +1,33 @@
 {
-    "name": "cppdev",
+    "name": "Alpine C++ Development",
     "build": {
-        "dockerfile": "Dockerfile",
-        "args": {
-            "USERNAME": "developer",
-            "USER_UID": "1000",
-            "USER_GID": "1000",
-            "WORKSPACE_NAME": "cppdev",
-            "SERVICE_USER": "appuser",
-            "SERVICE_GROUP": "appgroup",
-            "SERVICE_UID": "2000",
-            "SERVICE_GID": "2000"
-        }
+        "dockerfile": "Dockerfile"
     },
     "customizations": {
         "vscode": {
             "extensions": [
                 "ms-vscode.cpptools",
                 "ms-vscode.cmake-tools"
-            ]
+            ],
+            "settings": {
+                "C_Cpp.default.compilerPath": "/usr/bin/g++",
+                "C_Cpp.default.cppStandard": "c++17",
+                "C_Cpp.default.intelliSenseMode": "linux-gcc-arm64",
+                "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+                "C_Cpp.default.includePath": [
+                    "${workspaceFolder}/**",
+                    "${workspaceFolder}/build/build/Release/generators/**",
+                    "/home/developer/.conan2/p/b/boost*/p/include"
+                ],
+                "cmake.configureSettings": {
+                    "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                    "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/build/build/Release/generators/conan_toolchain.cmake"
+                },
+                "cmake.buildDirectory": "${workspaceFolder}/build",
+                "cmake.configureOnOpen": true,
+                "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            }
         }
     },
-    "remoteUser": "developer"
+    "postCreateCommand": "chmod +x .devcontainer/scripts/auto-chmod.sh && .devcontainer/scripts/auto-chmod.sh"
 } 

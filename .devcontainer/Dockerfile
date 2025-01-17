@@ -16,7 +16,21 @@ RUN apk update && apk add --no-cache \
     cmake \
     git \
     sudo \
-    bash
+    bash \
+    python3 \
+    python3-dev \
+    py3-pip \
+    musl-dev \
+    boost-dev \
+    boost-static \
+    linux-headers
+
+# Create and activate virtual environment for conan
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install conan in virtual environment
+RUN pip3 install --no-cache-dir conan
 
 # Create service group and user
 RUN addgroup -g $SERVICE_GID $SERVICE_GROUP && \
@@ -34,5 +48,24 @@ RUN mkdir -p /workspace && \
 
 WORKDIR /workspace
 
-# Switch to developer user
+# Set up conan for the developer user
+USER $USERNAME
+
+# Create and configure conan profile
+RUN conan profile detect --force && \
+    echo "[settings]" > ~/.conan2/profiles/default && \
+    echo "arch=armv8" >> ~/.conan2/profiles/default && \
+    echo "build_type=Release" >> ~/.conan2/profiles/default && \
+    echo "compiler=gcc" >> ~/.conan2/profiles/default && \
+    echo "compiler.cppstd=17" >> ~/.conan2/profiles/default && \
+    echo "compiler.libcxx=libstdc++11" >> ~/.conan2/profiles/default && \
+    echo "compiler.version=13" >> ~/.conan2/profiles/default && \
+    echo "os=Linux" >> ~/.conan2/profiles/default && \
+    echo "[options]" >> ~/.conan2/profiles/default && \
+    echo "*:shared=False" >> ~/.conan2/profiles/default
+
+# Copy and setup auto-chmod script
+COPY --chown=$USERNAME:$USERNAME scripts/auto-chmod.sh /home/$USERNAME/.local/scripts/
+RUN echo 'source ~/.local/scripts/auto-chmod.sh' >> /home/$USERNAME/.bashrc
+
 USER $USERNAME 

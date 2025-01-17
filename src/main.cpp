@@ -3,7 +3,8 @@
 #include <boost/beast/version.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/strand.hpp>
-#include <fmt/core.h>
+#include <boost/format.hpp>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <functional>
@@ -152,7 +153,7 @@ int main()
         // The acceptor receives incoming connections
         tcp::acceptor acceptor{ioc, {address, port}};
 
-        fmt::print("Server starting on port {}...\n", port);
+        std::cout << boost::format("Server starting on port %1%...\n") % port;
 
         // Start accepting connections asynchronously
         std::function<void()> do_accept;
@@ -176,7 +177,7 @@ int main()
     }
     catch(const std::exception& e)
     {
-        fmt::print(stderr, "Error: {}\n", e.what());
+        std::cerr << boost::format("Error: %1%\n") % e.what();
         return 1;
     }
 
