@@ -29,5 +29,10 @@
             }
         }
     },
-    "postCreateCommand": "chmod +x .devcontainer/scripts/auto-chmod.sh && .devcontainer/scripts/auto-chmod.sh"
+    "remoteUser": "developer",
+    "updateRemoteUserUID": true,
+    "postCreateCommand": "sudo chmod +x .devcontainer/scripts/setup-permissions.sh && .devcontainer/scripts/setup-permissions.sh && echo 'alias run-as-app=\"sudo -u appuser\"' >> ~/.bashrc && echo 'alias dev-mode=\"sudo -u developer\"' >> ~/.bashrc && source ~/.bashrc",
+    "remoteEnv": {
+        "PATH": "${containerEnv:PATH}:/home/developer/.local/bin"
+    }
 } 

@@ -5,6 +5,7 @@ ARG USERNAME=developer
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
 ARG WORKSPACE_NAME=cppdev
+
 ARG SERVICE_USER=appuser
 ARG SERVICE_GROUP=appgroup
 ARG SERVICE_UID=2000
@@ -42,9 +43,8 @@ RUN addgroup -g $USER_GID $USERNAME && \
     echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/$USERNAME && \
     chmod 0440 /etc/sudoers.d/$USERNAME
 
-# Create workspace directory and set permissions
-RUN mkdir -p /workspace && \
-    chown $USERNAME:$USERNAME /workspace
+# Create workspace directory (permissions will be set by setup-permissions.sh)
+RUN mkdir -p /workspace
 
 WORKDIR /workspace
 
@@ -63,9 +63,5 @@ RUN conan profile detect --force && \
     echo "os=Linux" >> ~/.conan2/profiles/default && \
     echo "[options]" >> ~/.conan2/profiles/default && \
     echo "*:shared=False" >> ~/.conan2/profiles/default
-
-# Copy and setup auto-chmod script
-COPY --chown=$USERNAME:$USERNAME scripts/auto-chmod.sh /home/$USERNAME/.local/scripts/
-RUN echo 'source ~/.local/scripts/auto-chmod.sh' >> /home/$USERNAME/.bashrc
 
 USER $USERNAME 

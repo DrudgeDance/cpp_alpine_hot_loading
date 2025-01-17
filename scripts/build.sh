@@ -35,9 +35,10 @@ cd bin
 if ! ldd your_app &> /dev/null; then
     echo "Success: Binary appears to be fully static!"
     
-    # Run with error checking
-    if ! ./your_app; then
-        echo "Error: Application crashed!"
+    echo -e "\nTesting application with appuser permissions:"
+    # Run as appuser (using full command instead of alias)
+    if ! sudo -u appuser ./your_app; then
+        echo "Error: Application crashed when running as appuser!"
         cd ..
         exit 1
     fi
@@ -46,4 +47,6 @@ else
     echo "Warning: Binary might not be fully static!"
     cd ..
     exit 1
-fi 
+fi
+
+echo -e "\nAll tests passed successfully!" 
