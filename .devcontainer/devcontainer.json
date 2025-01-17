@@ -9,7 +9,8 @@
                 "ms-vscode.cpptools",
                 "ms-vscode.cmake-tools",
                 "ms-python.python",
-                "ms-azuretools.vscode-docker"
+                "ms-azuretools.vscode-docker",
+                "ms-vscode.cpptools-extension-pack"
             ],
             "settings": {
                 "C_Cpp.default.compilerPath": "/usr/bin/g++",
@@ -18,12 +19,11 @@
                 "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
                 "C_Cpp.default.includePath": [
                     "${workspaceFolder}/**",
-                    "${workspaceFolder}/build/build/Release/generators/**",
-                    "/home/developer/.conan2/p/b/boost*/p/include"
+                    "${workspaceFolder}/build/generators/**"
                 ],
                 "cmake.configureSettings": {
                     "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-                    "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/build/build/Release/generators/conan_toolchain.cmake"
+                    "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/build/generators/conan_toolchain.cmake"
                 },
                 "cmake.buildDirectory": "${workspaceFolder}/build",
                 "cmake.configureOnOpen": true,
