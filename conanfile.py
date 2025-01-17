@@ -24,24 +24,21 @@ class YourAppConan(ConanFile):
     def layout(self):
         # Define a flat build structure
         self.folders.source = "."
-        self.folders.build = "build"
+        self.folders.build = "."  # Set to root to prevent nesting
         self.folders.generators = "generators"
         
         # Configure cpp layout
         self.cpp.source.includedirs = ["include"]
         self.cpp.build.libdirs = ["lib"]
         self.cpp.build.bindirs = ["bin"]
-        
-        # Set build info
         self.cpp.build.objects = ["obj"]
-        self.cpp.build.modules = ["generators"]
 
     def generate(self):
-        tc = CMakeToolchain(self, build_folder="build")
+        tc = CMakeToolchain(self)
         tc.variables["CMAKE_POSITION_INDEPENDENT_CODE"] = self.options.get_safe("fPIC", True)
         tc.variables["BUILD_SHARED_LIBS"] = False
         tc.generate()
-
+        
     def build(self):
         cmake = CMake(self)
         cmake.configure()

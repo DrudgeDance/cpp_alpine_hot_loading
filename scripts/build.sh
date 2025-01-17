@@ -11,7 +11,12 @@ mkdir -p build/generators build/lib build/bin build/obj
 echo "Installing dependencies with conan..."
 conan install . \
     --output-folder=build \
-    --build=missing
+    --build=missing \
+    -s build_type=Release \
+    -g "CMakeDeps"
+
+# Move generator files to the correct location
+mv build/generators/* build/generators/ 2>/dev/null || true
 
 echo "Configuring with CMake..."
 cmake -B build -S . \
