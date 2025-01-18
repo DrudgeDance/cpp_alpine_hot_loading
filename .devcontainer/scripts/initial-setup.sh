@@ -5,28 +5,53 @@ setup_dev_permissions() {
     local developer_user="developer"
     local developer_group="developer"
 
+    echo "Setting up development permissions..."
+
     # Set permissions for build directories and artifacts
     if [ -d "build" ]; then
-        sudo chown -R ${developer_user}:${developer_group} build/
-        sudo chmod -R 755 build/
+        echo "Setting up build directory..."
+        sudo chown -R ${developer_user}:${developer_group} build/ || echo "Failed to set build ownership"
+        sudo chmod -R 755 build/ || echo "Failed to set build permissions"
     fi
 
     # Set source code permissions
     if [ -d "src" ]; then
-        sudo chown -R ${developer_user}:${developer_group} src/
-        sudo chmod -R 644 src/
-        find src -type d -exec sudo chmod 755 {} \;
+        echo "Setting up source directory..."
+        sudo chown -R ${developer_user}:${developer_group} src/ || echo "Failed to set src ownership"
+        sudo find src -type f -exec sudo chmod 644 {} \; || echo "Failed to set src file permissions"
+        sudo find src -type d -exec sudo chmod 755 {} \; || echo "Failed to set src directory permissions"
     fi
 
     # Set include permissions
     if [ -d "include" ]; then
-        sudo chown -R ${developer_user}:${developer_group} include/
-        sudo chmod -R 644 include/
-        find include -type d -exec sudo chmod 755 {} \;
+        echo "Setting up include directory..."
+        sudo chown -R ${developer_user}:${developer_group} include/ || echo "Failed to set include ownership"
+        sudo find include -type f -exec sudo chmod 644 {} \; || echo "Failed to set include file permissions"
+        sudo find include -type d -exec sudo chmod 755 {} \; || echo "Failed to set include directory permissions"
     fi
 
-    # Start the permissions watcher in the background
-    nohup $(dirname "$0")/watch-permissions.sh > /dev/null 2>&1 &
+    # Start the permissions watcher in the background with nohup and proper redirection
+    echo "Starting permissions watcher..."
+    sudo chmod +x "$(dirname "$0")/watch-permissions.sh" || echo "Failed to make watcher executable"
+    nohup sudo -u ${developer_user} "$(dirname "$0")/watch-permissions.sh" > /tmp/watch-permissions.log 2>&1 &
+    local watcher_pid=$!
+    echo "Watcher started with PID: ${watcher_pid}"
+    
+    # Verify watcher is running (BusyBox compatible)
+    sleep 1  # Give the process a moment to start
+    if ps | grep -v grep | grep -q "watch-permissions.sh"; then
+        echo "Watcher successfully started"
+        # Set up initial permissions for scripts directory if it exists
+        if [ -d "scripts" ]; then
+            echo "Setting up initial scripts directory permissions..."
+            sudo chown root:${developer_group} scripts/
+            sudo chmod 2755 scripts/  # SetGID with r-x for group
+            sudo find scripts -type f -name "*.sh" -exec chmod 700 {} \;
+            sudo find scripts -type f -not -name "*.sh" -exec chmod 644 {} \;
+        fi
+    else
+        echo "Warning: Watcher may not have started properly"
+    fi
 }
 
 # Run setup if in workspace

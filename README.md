@@ -208,3 +208,57 @@ This setup ensures:
 3. Compiled binaries can be tested with production-like permissions
 4. No manual permission management needed during development
 5. Permissions are maintained automatically, even for newly added files 
+
+## Permission Management
+
+The project includes an automated permission management system that handles file permissions for development and deployment. This system consists of two main components:
+
+### Initial Setup Script (`.devcontainer/scripts/initial-setup.sh`)
+
+This script sets up the initial permissions for the project directories and launches the permissions watcher. It:
+
+- Sets appropriate permissions for build, source, and include directories
+- Configures the `scripts/` directory with setgid bit (2775)
+- Launches the permissions watcher as a background process
+
+### Permissions Watcher (`.devcontainer/scripts/watch-permissions.sh`)
+
+A daemon that automatically manages file permissions. It:
+
+- Monitors the `scripts/` and `bin/` directories for file changes
+- Automatically sets correct permissions for new files:
+  - Shell scripts (`*.sh`): 700 (rwx------)
+  - Regular files: 644 (rw-r--r--)
+  - Binary files: 755 (rwxr-xr-x)
+- Maintains correct ownership:
+  - Development files: developer:developer
+  - Binary files: appuser:appgroup
+
+### Usage
+
+The permission system starts automatically when you open the project in the dev container. If you need to restart it manually:
+
+```bash
+# Stop existing watcher
+sudo pkill -f watch-permissions.sh
+
+# Run initial setup
+sudo .devcontainer/scripts/initial-setup.sh
+```
+
+### File Permission Rules
+
+- **Shell Scripts** (`*.sh`):
+  - Permission: 700 (rwx------)
+  - Owner: developer:developer
+  - Location: scripts/
+
+- **Regular Files**:
+  - Permission: 644 (rw-r--r--)
+  - Owner: developer:developer
+  - Location: scripts/
+
+- **Binary Files**:
+  - Permission: 755 (rwxr-xr-x)
+  - Owner: appuser:appgroup
+  - Location: bin/ 
