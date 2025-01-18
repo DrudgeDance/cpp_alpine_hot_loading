@@ -33,7 +33,7 @@
     },
     "remoteUser": "developer",
     "updateRemoteUserUID": true,
-    "postCreateCommand": "sudo chmod +x .devcontainer/scripts/initial-setup.sh && .devcontainer/scripts/initial-setup.sh",
+    "postCreateCommand": "sudo chmod +x .devcontainer/scripts/initial-setup.sh .devcontainer/scripts/watch-permissions.sh && .devcontainer/scripts/initial-setup.sh && echo 'alias run-as-app=\"sudo -u appuser\"' >> ~/.bashrc && echo 'alias dev-mode=\"sudo -u developer\"' >> ~/.bashrc && source ~/.bashrc",
     "remoteEnv": {
         "PATH": "${containerEnv:PATH}:/home/developer/.local/bin"
     }

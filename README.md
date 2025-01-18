@@ -159,25 +159,27 @@ sudo -u developer ./command
 
 The development environment uses an advanced permission management system split into two components:
 
-#### Initial Setup
-During container creation, `initial-setup.sh` runs once to:
-- Set up the base directory structure with correct permissions
-- Configure the `scripts` directory with SetGID bit (2755)
-- Set initial permissions for all existing files
-- Launch the continuous permission watcher
+#### Permission Setup and Management
+Two scripts handle all permission management:
 
-#### Continuous Permission Management
-A background watcher (`watch-permissions.sh`) automatically maintains permissions:
-- Monitors the `scripts` directory for any changes
-- Automatically sets correct permissions when files are:
-  - Created
-  - Modified
-  - Moved into the directory
-- Makes shell scripts (*.sh) executable (700) automatically
-- Sets appropriate permissions (644) for non-script files
+1. `initial-setup.sh`:
+   - Sets up proper permissions for development files
+   - Runs once during container creation
+   - Configures the `scripts` directory with SetGID bit (2755)
+   - Sets initial permissions for all directories and files
+   - Launches the permissions watcher
+   - Can be re-run using the `setup-permissions` alias if needed
+
+2. `watch-permissions.sh`:
+   - Runs as a background process
+   - Monitors the `scripts` directory for any changes
+   - Automatically updates permissions when files are:
+     - Created
+     - Modified
+     - Moved into the directory
 
 #### Directory Permissions
-The environment maintains specific permissions for each directory type:
+Each directory has specific permissions maintained by the system:
 - `scripts/`: 
   - Directory has SetGID bit (2755)
   - Shell scripts automatically get 700 (rwx------)
@@ -185,7 +187,10 @@ The environment maintains specific permissions for each directory type:
 - `src/`: Source files (644) with traversable directories (755)
 - `include/`: Header files (644) with traversable directories (755)
 - `build/`: Build artifacts (755) owned by developer
-- `bin/`: Binaries (755) owned by appuser for deployment testing
+- `bin/`: 
+  - Directory owned by developer (755)
+  - Executables owned by appuser (755)
+  - Allows deployment permission testing
 
 #### User Permissions
 - `developer` user:
