@@ -4,34 +4,11 @@
 setup_dev_permissions() {
     local developer_user="developer"
     local developer_group="developer"
-    local service_user="appuser"
-    local service_group="appgroup"
-
-    # Set up scripts directory with setgid bit
-    if [ -d "scripts" ]; then
-        # Set ownership
-        sudo chown -R ${developer_user}:${developer_group} scripts/
-        # Set setgid bit on directory (2755 = rwxr-sr-x)
-        sudo chmod 2755 scripts/
-        # Make all current .sh files executable
-        find scripts -type f -name "*.sh" -exec sudo chmod 700 {} \;
-        
-        # Start the permissions watcher in the background
-        nohup $(dirname "$0")/watch-permissions.sh > /dev/null 2>&1 &
-    fi
 
     # Set permissions for build directories and artifacts
     if [ -d "build" ]; then
         sudo chown -R ${developer_user}:${developer_group} build/
         sudo chmod -R 755 build/
-    fi
-
-    # Set permissions for binary output directories
-    if [ -d "bin" ]; then
-        # Developer owns the directory
-        sudo chown -R ${developer_user}:${developer_group} bin/
-        # But executables should be runnable by appuser
-        find bin -type f -executable -exec sudo chown ${service_user}:${service_group} {} \; -exec sudo chmod 755 {} \;
     fi
 
     # Set source code permissions
@@ -47,9 +24,10 @@ setup_dev_permissions() {
         sudo chmod -R 644 include/
         find include -type d -exec sudo chmod 755 {} \;
     fi
-}
 
-alias setup-permissions='setup_dev_permissions'
+    # Start the permissions watcher in the background
+    nohup $(dirname "$0")/watch-permissions.sh > /dev/null 2>&1 &
+}
 
 # Run setup if in workspace
 if [ -d /workspaces/alpine_endpoint ] || [ -d /workspace ]; then
