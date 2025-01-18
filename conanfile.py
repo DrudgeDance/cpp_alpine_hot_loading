@@ -15,7 +15,9 @@ class YourAppConan(ConanFile):
     }
 
     def requirements(self):
-        self.requires("boost/1.83.0")
+        self.requires("boost/1.83.0", options={
+            "without_log": False,  # Enable log (includes log_setup)
+        })
 
     def config_options(self):
         if self.settings.os == "Windows":

@@ -23,10 +23,8 @@ setup_logging "$WATCHER_LOG" "$WATCHER_DEBUG_LOG"
 ensure_root "$@"
 
 # Check for existing process more thoroughly
-# Only look for processes that are actually watching (with inotifywait)
-pids=$(pgrep -f "inotifywait.*scripts.*bin" | grep -v $$)
-if [ -n "$pids" ]; then
-    error "Watcher is already running (PIDs: $pids)"
+if check_watcher_running; then
+    error "Watcher is already running"
     exit 1
 fi
 
@@ -45,7 +43,7 @@ cd "$WORKSPACE_DIR" || {
 }
 
 # Verify directories exist
-for dir in scripts bin; do
+for dir in "${WATCH_DIRS[@]}"; do
     if [ ! -d "$dir" ]; then
         error "Required directory not found: $dir"
         pwd
@@ -133,12 +131,11 @@ if ! command -v inotifywait >/dev/null 2>&1; then
 fi
 
 # Create a named pipe for inotifywait output
-PIPE="/tmp/watch-permissions.pipe"
 rm -f "$PIPE"
 mkfifo "$PIPE"
 
 # Start inotifywait and redirect its output to the pipe
-inotifywait -m -q -e create,modify,moved_to scripts/ bin/ > "$PIPE" 2>/dev/null &
+inotifywait -m -q -e "$WATCH_EVENTS" "${WATCH_DIRS[@]}" > "$PIPE" 2>/dev/null &
 INOTIFY_PID=$!
 
 # Wait a moment to ensure inotifywait started successfully

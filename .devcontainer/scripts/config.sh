@@ -14,6 +14,7 @@ SERVICE_GROUP="appgroup"
 
 # Common file paths
 LOCKFILE="/tmp/watch-permissions.lock"
+PIPE="/tmp/watch-permissions.pipe"
 WATCHER_LOG="/tmp/watch-permissions.log"
 WATCHER_DEBUG_LOG="/tmp/watch-permissions-debug.log"
 SETUP_LOG="/tmp/initial-setup.log"
@@ -26,6 +27,10 @@ DIR_PERMS=755         # Standard directory permissions
 FILE_PERMS=644        # Standard file permissions
 SCRIPT_PERMS=700      # Executable script permissions
 BIN_PERMS=755         # Binary permissions
+
+# Watcher configuration
+WATCH_DIRS=("scripts/" "bin/")  # Directories to watch
+WATCH_EVENTS="create,modify,moved_to"  # Events to watch for
 
 # Common message functions
 status() {
@@ -81,6 +86,19 @@ ensure_root() {
     if [ "$(id -u)" != "0" ]; then
         exec sudo "$0" "$@"
     fi
+}
+
+# Process management functions
+kill_watchers() {
+    pkill -f "watch-permissions.sh" 2>/dev/null || true
+    pkill -f "inotifywait.*scripts.*bin" 2>/dev/null || true
+    rm -f "$LOCKFILE" 2>/dev/null || true
+    rm -f "$PIPE" 2>/dev/null || true
+    sleep 1
+}
+
+check_watcher_running() {
+    pgrep -f "inotifywait.*scripts.*bin" >/dev/null
 }
 
 # Common process management

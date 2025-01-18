@@ -47,17 +47,12 @@ setup_dev_permissions() {
         success "Bin directory configured" || error "Failed to configure bin directory"
     fi
 
-    # Kill any existing watchers more thoroughly
+    # Kill any existing watchers
     status "Managing permission watcher"
-    # Kill both the watcher script and inotifywait processes
-    pkill -f "watch-permissions.sh" 2>/dev/null || true
-    pkill -f "inotifywait.*watch-permissions" 2>/dev/null || true
-    pkill -f "inotifywait.*scripts.*bin" 2>/dev/null || true
-    rm -f "$LOCKFILE" 2>/dev/null || true
+    kill_watchers
     
     # Verify all watchers are stopped
-    sleep 1
-    if pgrep -f "inotifywait" >/dev/null; then
+    if check_watcher_running; then
         error "Failed to stop existing watchers"
         ps aux | grep -E "watch-permissions|inotifywait"
         return 1
@@ -92,7 +87,7 @@ setup_dev_permissions() {
     sleep 2
     
     # Check for the actual inotifywait process
-    if ! pgrep -f "inotifywait.*scripts.*bin" >/dev/null; then
+    if ! check_watcher_running; then
         error "Watcher process failed to start inotifywait"
         echo "Last 50 lines of watcher log:"
         tail -n 50 "$WATCHER_LOG"
