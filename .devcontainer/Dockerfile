@@ -1,10 +1,9 @@
 FROM alpine:latest
 
-# Set ARGs
+# Set ARGs for user/group IDs (should match config.sh)
 ARG USERNAME=developer
 ARG USER_UID=1000
 ARG USER_GID=$USER_UID
-ARG WORKSPACE_NAME=cppdev
 
 ARG SERVICE_USER=appuser
 ARG SERVICE_GROUP=appgroup
@@ -30,11 +29,26 @@ RUN apk update && apk add --no-cache \
     inotify-tools
 
 # Create and activate virtual environment for conan
-RUN python3 -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+RUN python3 -m venv /opt/venv && \
+    chmod -R g+rwx /opt/venv
 
-# Install conan in virtual environment
-RUN pip3 install --no-cache-dir conan
+ENV PATH="/opt/venv/bin:$PATH"
+ENV PYTHONPATH="/opt/venv/lib/python3.11/site-packages"
+ENV VIRTUAL_ENV="/opt/venv"
+# Disable the "(venv)" prefix in prompt
+ENV VIRTUAL_ENV_DISABLE_PROMPT=1
+
+# First layer: Install and upgrade pip
+RUN /opt/venv/bin/pip3 install --no-cache-dir --upgrade pip
+
+# Second layer: Install Conan (main tool)
+RUN /opt/venv/bin/pip3 install --no-cache-dir conan==2.11.0
+
+# Third layer: Install supporting packages
+RUN /opt/venv/bin/pip3 install --no-cache-dir \
+    distro==1.9.0 \
+    urllib3==2.3.0 \
+    patch-ng==1.18.1
 
 # Create service group and user
 RUN addgroup -g $SERVICE_GID $SERVICE_GROUP && \
@@ -47,9 +61,9 @@ RUN addgroup -g $USER_GID $USERNAME && \
     chmod 0440 /etc/sudoers.d/$USERNAME
 
 # Create workspace directory (permissions will be set by setup-permissions.sh)
-RUN mkdir -p /workspace
+RUN mkdir -p /workspaces
 
-WORKDIR /workspace
+WORKDIR /workspaces/alpine_endpoint
 
 # Set up conan for the developer user
 USER $USERNAME

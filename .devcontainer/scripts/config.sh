@@ -1,16 +1,53 @@
 #!/bin/bash
 
-# Common workspace directory detection
+# Workspace configuration
 WORKSPACE_DIR="/workspaces/alpine_endpoint"
-if [ ! -d "$WORKSPACE_DIR" ]; then
-    WORKSPACE_DIR="/workspace"
-fi
 
 # User and group configurations
 DEVELOPER_USER="developer"
 DEVELOPER_GROUP="developer"
+DEVELOPER_UID=1000
+DEVELOPER_GID=1000
+
 SERVICE_USER="appuser"
 SERVICE_GROUP="appgroup"
+SERVICE_UID=2000
+SERVICE_GID=2000
+
+# Directory ownership
+WORKSPACE_OWNER="root"
+WORKSPACE_GROUP="root"
+WORKSPACE_PERMS=755
+
+PROJECT_OWNER="$DEVELOPER_USER"
+PROJECT_GROUP="$DEVELOPER_GROUP"
+PROJECT_PERMS=755
+
+# Build directory permissions
+BUILD_OWNER="$DEVELOPER_USER"
+BUILD_GROUP="$DEVELOPER_GROUP"
+BUILD_DIR_PERMS=755
+BUILD_FILE_PERMS=644
+
+# Directory structure
+REQUIRED_DIRS=(
+    "build"
+    "src"
+    "scripts"
+    "bin"
+    "include"
+)
+
+# Paths to exclude from permission changes
+EXCLUDED_PATHS=(
+    ".git"
+    ".github"
+    ".vscode"
+    "node_modules"
+    "build/CMakeFiles"     # CMake internal files
+    "build/_deps"          # CMake dependencies
+    "build/Testing"        # CMake test outputs
+)
 
 # Common file paths
 LOCKFILE="/tmp/watch-permissions.lock"
@@ -58,6 +95,17 @@ setup_logging() {
     fi
 }
 
+# Check if a path should be excluded
+is_excluded() {
+    local check_path="$1"
+    for excluded in "${EXCLUDED_PATHS[@]}"; do
+        if [[ "$check_path" == *"/$excluded"* ]] || [[ "$check_path" == *"/$excluded/" ]]; then
+            return 0
+        fi
+    done
+    return 1
+}
+
 # Common directory setup function
 setup_directory() {
     local dir="$1"
@@ -67,18 +115,37 @@ setup_directory() {
     local file_perms="$5"
     
     if [ ! -d "$dir" ]; then
-        return 0  # Skip if directory doesn't exist
+        mkdir -p "$dir" || {
+            error "Failed to create directory: $dir"
+            return 1
+        }
     fi
     
     status "Configuring $dir directory"
-    chown "$owner:$group" "$dir" && \
-    chmod "$dir_perms" "$dir" && \
-    find "$dir" -type f -exec chmod "$file_perms" {} \; && \
-    find "$dir" -type d -exec chmod "$dir_perms" {} \; && \
-    success "$dir directory configured" || {
-        error "Failed to configure $dir directory"
-        return 1
-    }
+    
+    # Set ownership and permissions on the directory itself
+    chown "$owner:$group" "$dir" || error "Failed to set ownership on $dir"
+    chmod "$dir_perms" "$dir" || error "Failed to set permissions on $dir"
+    
+    # Process subdirectories and files
+    find "$dir" -mindepth 1 | while read -r path; do
+        # Skip excluded paths
+        if is_excluded "$path"; then
+            [ -n "$DEBUG" ] && echo "Skipping excluded path: $path"
+            continue
+        fi
+        
+        if [ -d "$path" ]; then
+            chmod "$dir_perms" "$path" 2>/dev/null || true
+            chown "$owner:$group" "$path" 2>/dev/null || true
+        else
+            chmod "$file_perms" "$path" 2>/dev/null || true
+            chown "$owner:$group" "$path" 2>/dev/null || true
+        fi
+    done
+    
+    success "$dir directory configured"
+    return 0
 }
 
 # Ensure root privileges

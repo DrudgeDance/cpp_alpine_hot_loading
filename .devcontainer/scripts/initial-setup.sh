@@ -13,37 +13,45 @@ ensure_root "$@"
 setup_dev_permissions() {
     status "Setting up development environment..."
 
-    # Create necessary directories if they don't exist
+    # Create and configure /workspaces
+    setup_directory "/workspaces" "$WORKSPACE_OWNER" "$WORKSPACE_GROUP" "$WORKSPACE_PERMS" "$WORKSPACE_PERMS"
+
+    # Create and configure project directory
+    setup_directory "$WORKSPACE_DIR" "$PROJECT_OWNER" "$PROJECT_GROUP" "$PROJECT_PERMS" "$PROJECT_PERMS"
+
+    # Create necessary directories
     status "Creating directory structure"
-    mkdir -p build/generators build/lib build/obj || error "Failed to create build directories"
-    mkdir -p src || error "Failed to create source directory"
-    mkdir -p scripts || error "Failed to create scripts directory"
-    mkdir -p bin || error "Failed to create bin directory"
+    for dir in "${REQUIRED_DIRS[@]}"; do
+        mkdir -p "$WORKSPACE_DIR/$dir" || error "Failed to create $dir"
+    done
     success "Directory structure created"
 
-    # Set up each directory with proper permissions
-    setup_directory "build" "$DEVELOPER_USER" "$DEVELOPER_GROUP" "$DIR_PERMS" "$FILE_PERMS"
-    setup_directory "src" "$DEVELOPER_USER" "$DEVELOPER_GROUP" "$DIR_PERMS" "$FILE_PERMS"
-    setup_directory "include" "$DEVELOPER_USER" "$DEVELOPER_GROUP" "$DIR_PERMS" "$FILE_PERMS"
+    # Set up build directory with proper permissions
+    status "Configuring build directory"
+    setup_directory "$WORKSPACE_DIR/build" "$BUILD_OWNER" "$BUILD_GROUP" "$BUILD_DIR_PERMS" "$BUILD_FILE_PERMS"
+
+    # Set up standard directories with proper permissions
+    setup_directory "$WORKSPACE_DIR/src" "$DEVELOPER_USER" "$DEVELOPER_GROUP" "$DIR_PERMS" "$FILE_PERMS"
+    setup_directory "$WORKSPACE_DIR/include" "$DEVELOPER_USER" "$DEVELOPER_GROUP" "$DIR_PERMS" "$FILE_PERMS"
     
     # Special handling for scripts directory
-    if [ -d "scripts" ]; then
+    if [ -d "$WORKSPACE_DIR/scripts" ]; then
         status "Configuring scripts directory"
-        chown root:${DEVELOPER_GROUP} scripts/ && \
-        chmod $SCRIPT_DIR_PERMS scripts/ && \
-        find scripts -type f -name "*.sh" -exec chmod $SCRIPT_PERMS {} \; && \
-        find scripts -type f -not -name "*.sh" -exec chmod $FILE_PERMS {} \; && \
-        chown -R ${DEVELOPER_USER}:${DEVELOPER_GROUP} scripts/* && \
+        chown root:${DEVELOPER_GROUP} "$WORKSPACE_DIR/scripts" && \
+        chmod $SCRIPT_DIR_PERMS "$WORKSPACE_DIR/scripts" && \
+        find "$WORKSPACE_DIR/scripts" -type f -name "*.sh" -exec chmod $SCRIPT_PERMS {} \; && \
+        find "$WORKSPACE_DIR/scripts" -type f -not -name "*.sh" -exec chmod $FILE_PERMS {} \; && \
+        chown -R ${DEVELOPER_USER}:${DEVELOPER_GROUP} "$WORKSPACE_DIR/scripts/"* && \
         success "Scripts directory configured" || error "Failed to configure scripts directory"
     fi
 
     # Special handling for bin directory
-    if [ -d "bin" ]; then
+    if [ -d "$WORKSPACE_DIR/bin" ]; then
         status "Configuring bin directory"
-        chown root:${DEVELOPER_GROUP} bin/ && \
-        chmod $BIN_DIR_PERMS bin/ && \
-        find bin -type f -exec chmod $BIN_PERMS {} \; && \
-        find bin -type f -exec chown ${SERVICE_USER}:${SERVICE_GROUP} {} \; && \
+        chown root:${DEVELOPER_GROUP} "$WORKSPACE_DIR/bin" && \
+        chmod $BIN_DIR_PERMS "$WORKSPACE_DIR/bin" && \
+        find "$WORKSPACE_DIR/bin" -type f -exec chmod $BIN_PERMS {} \; && \
+        find "$WORKSPACE_DIR/bin" -type f -exec chown ${SERVICE_USER}:${SERVICE_GROUP} {} \; && \
         success "Bin directory configured" || error "Failed to configure bin directory"
     fi
 
@@ -81,7 +89,6 @@ setup_dev_permissions() {
     else
         setsid "$watcher_script" > "$WATCHER_LOG" 2>&1 &
     fi
-    local watcher_pid=$!
     
     # Give it a moment to start and check if it's running
     sleep 2

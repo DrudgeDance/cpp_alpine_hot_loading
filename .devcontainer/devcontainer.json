@@ -10,9 +10,14 @@
                 "ms-vscode.cmake-tools",
                 "ms-python.python",
                 "ms-azuretools.vscode-docker",
-                "ms-vscode.cpptools-extension-pack"
+                "ms-vscode.cpptools-extension-pack",
+                "ms-python.vscode-pylance"
             ],
             "settings": {
+                "python.defaultInterpreterPath": "/opt/venv/bin/python",
+                "python.analysis.extraPaths": [
+                    "/opt/venv/lib/python3.12/site-packages"
+                ],
                 "C_Cpp.default.compilerPath": "/usr/bin/g++",
                 "C_Cpp.default.cppStandard": "c++17",
                 "C_Cpp.default.intelliSenseMode": "linux-gcc-arm64",
@@ -25,6 +30,7 @@
                     "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                     "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/build/generators/conan_toolchain.cmake"
                 },
+                "cmake.defaultPreset": "conan-release",
                 "cmake.buildDirectory": "${workspaceFolder}/build",
                 "cmake.configureOnOpen": true
             }
