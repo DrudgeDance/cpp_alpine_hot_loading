@@ -7,34 +7,12 @@
         "vscode": {
             "extensions": [
                 "ms-vscode.cpptools",
-                "ms-vscode.cmake-tools",
-                "ms-python.python",
-                "ms-azuretools.vscode-docker",
-                "ms-vscode.cpptools-extension-pack"
-            ],
-            "settings": {
-                "C_Cpp.default.compilerPath": "/usr/bin/g++",
-                "C_Cpp.default.cppStandard": "c++17",
-                "C_Cpp.default.intelliSenseMode": "linux-gcc-arm64",
-                "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
-                "C_Cpp.default.includePath": [
-                    "${workspaceFolder}/**",
-                    "${workspaceFolder}/build/generators/**"
-                ],
-                "cmake.configureSettings": {
-                    "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
-                    "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/build/generators/conan_toolchain.cmake"
-                },
-                "cmake.buildDirectory": "${workspaceFolder}/build",
-                "cmake.configureOnOpen": true,
-                "C_Cpp.default.compileCommands": "${workspaceFolder}/build/compile_commands.json"
-            }
+                "ms-vscode.cmake-tools"
+            ]
         }
     },
+    "postCreateCommand": "sudo chmod +x .devcontainer/scripts/*.sh && .devcontainer/scripts/initial-setup.sh && echo 'alias run-as-app=\"sudo -u appuser\"' >> ~/.bashrc && echo 'alias dev-mode=\"sudo -u developer\"' >> ~/.bashrc && source ~/.bashrc",
     "remoteUser": "developer",
-    "updateRemoteUserUID": true,
-    "postCreateCommand": "sudo chmod +x .devcontainer/scripts/initial-setup.sh .devcontainer/scripts/watch-permissions.sh && .devcontainer/scripts/initial-setup.sh && echo 'alias run-as-app=\"sudo -u appuser\"' >> ~/.bashrc && echo 'alias dev-mode=\"sudo -u developer\"' >> ~/.bashrc && source ~/.bashrc",
-    "remoteEnv": {
-        "PATH": "${containerEnv:PATH}:/home/developer/.local/bin"
-    }
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/alpine_endpoint,type=bind,consistency=cached",
+    "workspaceFolder": "/workspaces/alpine_endpoint"
 } 
