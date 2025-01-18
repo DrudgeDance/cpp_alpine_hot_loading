@@ -17,7 +17,7 @@ setup_dev_permissions() {
         find scripts -type f -name "*.sh" -exec sudo chmod 700 {} \;
         
         # Start the permissions watcher in the background
-        .devcontainer/scripts/watch-permissions.sh &
+        nohup $(dirname "$0")/watch-permissions.sh > /dev/null 2>&1 &
     fi
 
     # Set permissions for build directories and artifacts
@@ -51,7 +51,8 @@ setup_dev_permissions() {
 
 alias setup-permissions='setup_dev_permissions'
 
-# Run it once when container starts if we're in the workspace
-if [ -d /workspace ]; then
-    cd /workspace && setup_dev_permissions
+# Run setup if in workspace
+if [ -d /workspaces/alpine_endpoint ] || [ -d /workspace ]; then
+    cd /workspaces/alpine_endpoint 2>/dev/null || cd /workspace
+    setup_dev_permissions
 fi 

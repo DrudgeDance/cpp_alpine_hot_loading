@@ -1,14 +1,23 @@
 #!/bin/bash
 
+# Get the workspace directory
+WORKSPACE_DIR="/workspaces/alpine_endpoint"
+if [ ! -d "$WORKSPACE_DIR" ]; then
+    WORKSPACE_DIR="/workspace"
+fi
+
 # Function to update permissions for scripts directory
 update_script_permissions() {
     local file="$1"
     if [[ "$file" == *.sh ]]; then
-        chmod 700 "$file"
+        sudo chmod 700 "$file"
     else
-        chmod 644 "$file"
+        sudo chmod 644 "$file"
     fi
 }
+
+# Change to workspace directory
+cd "$WORKSPACE_DIR"
 
 # Watch scripts directory for changes
 while true; do
