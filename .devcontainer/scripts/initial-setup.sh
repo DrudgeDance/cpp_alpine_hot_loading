@@ -1,136 +1,116 @@
 #!/bin/bash
 
-# Debug logging only if DEBUG is set
-if [ -n "$DEBUG" ]; then
-    set -x
-    exec 1> >(tee -a "/tmp/initial-setup-debug.log") 2>&1
-else
-    # Cleaner output for normal operation
-    exec 1> >(tee -a "/tmp/initial-setup.log") 2>&1
-fi
-
-# Check if we're being run through sudo
-if [ -z "$SUDO_COMMAND" ] && [ "$(id -u)" != "0" ]; then
-    exec sudo "$0" "$@"
-fi
-
-# Source common configuration
+# Source common configuration first
 source "$(dirname "$0")/config.sh"
 
-# Function to print status messages
-status() {
-    echo -e "\n$1"
-}
+# Set up logging
+setup_logging "$SETUP_LOG" "$SETUP_DEBUG_LOG"
 
-# Function to print success messages
-success() {
-    echo -e "✅ $1\n"
-}
-
-# Function to print error messages
-error() {
-    echo -e "❌ $1\n" >&2
-}
+# Ensure we're running as root
+ensure_root "$@"
 
 # Function to set up proper permissions for development files
 setup_dev_permissions() {
     status "Setting up development environment..."
 
-    # Set permissions for build directories and artifacts
-    if [ -d "build" ]; then
-        status "Configuring build directory"
-        chown -R ${DEVELOPER_USER}:${DEVELOPER_GROUP} build/ && \
-        chmod -R 755 build/ && \
-        success "Build directory configured" || error "Failed to configure build directory"
-    fi
+    # Create necessary directories if they don't exist
+    status "Creating directory structure"
+    mkdir -p build/generators build/lib build/obj || error "Failed to create build directories"
+    mkdir -p src || error "Failed to create source directory"
+    mkdir -p scripts || error "Failed to create scripts directory"
+    mkdir -p bin || error "Failed to create bin directory"
+    success "Directory structure created"
 
-    # Set source code permissions
-    if [ -d "src" ]; then
-        status "Configuring source directory"
-        chown -R ${DEVELOPER_USER}:${DEVELOPER_GROUP} src/ && \
-        find src -type f -exec chmod 644 {} \; && \
-        find src -type d -exec chmod 755 {} \; && \
-        success "Source directory configured" || error "Failed to configure source directory"
-    fi
-
-    # Set include permissions
-    if [ -d "include" ]; then
-        status "Configuring include directory"
-        chown -R ${DEVELOPER_USER}:${DEVELOPER_GROUP} include/ && \
-        find include -type f -exec chmod 644 {} \; && \
-        find include -type d -exec chmod 755 {} \; && \
-        success "Include directory configured" || error "Failed to configure include directory"
-    fi
-
-    # Set up scripts directory if it exists
+    # Set up each directory with proper permissions
+    setup_directory "build" "$DEVELOPER_USER" "$DEVELOPER_GROUP" "$DIR_PERMS" "$FILE_PERMS"
+    setup_directory "src" "$DEVELOPER_USER" "$DEVELOPER_GROUP" "$DIR_PERMS" "$FILE_PERMS"
+    setup_directory "include" "$DEVELOPER_USER" "$DEVELOPER_GROUP" "$DIR_PERMS" "$FILE_PERMS"
+    
+    # Special handling for scripts directory
     if [ -d "scripts" ]; then
         status "Configuring scripts directory"
         chown root:${DEVELOPER_GROUP} scripts/ && \
-        chmod 2755 scripts/ && \
-        find scripts -type f -name "*.sh" -exec chmod 700 {} \; && \
-        find scripts -type f -not -name "*.sh" -exec chmod 644 {} \; && \
+        chmod $SCRIPT_DIR_PERMS scripts/ && \
+        find scripts -type f -name "*.sh" -exec chmod $SCRIPT_PERMS {} \; && \
+        find scripts -type f -not -name "*.sh" -exec chmod $FILE_PERMS {} \; && \
         chown -R ${DEVELOPER_USER}:${DEVELOPER_GROUP} scripts/* && \
         success "Scripts directory configured" || error "Failed to configure scripts directory"
     fi
 
-    # Set up bin directory if it exists
+    # Special handling for bin directory
     if [ -d "bin" ]; then
         status "Configuring bin directory"
         chown root:${DEVELOPER_GROUP} bin/ && \
-        chmod 2775 bin/ && \
-        find bin -type f -exec chmod 755 {} \; && \
+        chmod $BIN_DIR_PERMS bin/ && \
+        find bin -type f -exec chmod $BIN_PERMS {} \; && \
         find bin -type f -exec chown ${SERVICE_USER}:${SERVICE_GROUP} {} \; && \
         success "Bin directory configured" || error "Failed to configure bin directory"
     fi
 
-    # Kill any existing watchers
+    # Kill any existing watchers more thoroughly
     status "Managing permission watcher"
-    if [ -f /tmp/watch-permissions.pid ]; then
-        local old_pid=$(cat /tmp/watch-permissions.pid)
-        if [ -n "$old_pid" ]; then
-            kill -TERM "$old_pid" 2>/dev/null || true
-            rm -f /tmp/watch-permissions.pid
-        fi
-    fi
-    pkill -f watch-permissions.sh 2>/dev/null || true
+    # Kill both the watcher script and inotifywait processes
+    pkill -f "watch-permissions.sh" 2>/dev/null || true
+    pkill -f "inotifywait.*watch-permissions" 2>/dev/null || true
+    pkill -f "inotifywait.*scripts.*bin" 2>/dev/null || true
+    rm -f "$LOCKFILE" 2>/dev/null || true
+    
+    # Verify all watchers are stopped
     sleep 1
+    if pgrep -f "inotifywait" >/dev/null; then
+        error "Failed to stop existing watchers"
+        ps aux | grep -E "watch-permissions|inotifywait"
+        return 1
+    fi
 
     # Start the permissions watcher in the background
+    status "Starting permission watcher"
     local watcher_script="$(dirname "$0")/watch-permissions.sh"
+    
+    # Verify watcher script exists
+    if [ ! -f "$watcher_script" ]; then
+        error "Watcher script not found at: $watcher_script"
+        return 1
+    fi
+    
+    # Make watcher executable
     chmod +x "$watcher_script" || {
         error "Failed to make watcher executable"
         return 1
     }
     
-    # Start watcher directly (it will handle sudo itself)
-    setsid "$watcher_script" > /tmp/watch-permissions.log 2>&1 &
+    # Start watcher with debug output
+    if [ -n "$DEBUG" ]; then
+        status "Starting watcher in debug mode"
+        DEBUG=1 setsid "$watcher_script" > "$WATCHER_LOG" 2>&1 &
+    else
+        setsid "$watcher_script" > "$WATCHER_LOG" 2>&1 &
+    fi
     local watcher_pid=$!
     
-    # Verify watcher is running (BusyBox compatible)
-    sleep 2  # Give the process a moment to start
+    # Give it a moment to start and check if it's running
+    sleep 2
     
-    if ps | grep -v grep | grep -q "watch-permissions.sh"; then
-        success "Permission watcher started successfully"
-        if [ -n "$DEBUG" ]; then
-            echo "Last 10 lines of watcher log:"
-            tail -n 10 /tmp/watch-permissions.log
-        fi
-        return 0
-    else
-        error "Permission watcher failed to start"
-        if [ -n "$DEBUG" ]; then
-            echo "Watcher log contents:"
-            cat /tmp/watch-permissions.log
-            echo "Process list:"
-            ps aux
-        fi
+    # Check for the actual inotifywait process
+    if ! pgrep -f "inotifywait.*scripts.*bin" >/dev/null; then
+        error "Watcher process failed to start inotifywait"
+        echo "Last 50 lines of watcher log:"
+        tail -n 50 "$WATCHER_LOG"
         return 1
     fi
+    
+    # Success - watcher is running
+    success "Permission watcher started successfully"
+    if [ -n "$DEBUG" ]; then
+        echo "Last 10 lines of watcher log:"
+        tail -n 10 "$WATCHER_LOG"
+        echo "Process list:"
+        ps aux | grep -E "watch-permissions|inotifywait"
+    fi
+    return 0
 }
 
 # Run setup if in workspace
-if [ -d /workspaces/alpine_endpoint ] || [ -d /workspace ]; then
-    cd /workspaces/alpine_endpoint 2>/dev/null || cd /workspace
-    setup_dev_permissions
-    exit $?
-fi 
+cd "$WORKSPACE_DIR" 2>/dev/null || { error "Failed to change to workspace directory"; exit 1; }
+setup_dev_permissions
+exit $? 
