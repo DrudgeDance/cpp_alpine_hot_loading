@@ -3,12 +3,8 @@
 # Enable debug logging
 set -x
 
-# Global variables for user/group management
-DEVELOPER_USER="developer"
-DEVELOPER_GROUP="developer"
-
-SERVICE_USER="appuser"
-SERVICE_GROUP="appgroup"
+# Source common configuration
+source "$(dirname "$0")/config.sh"
 
 # Ensure we're running as root or with sudo
 if [ "$(id -u)" != "0" ]; then
