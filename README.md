@@ -157,8 +157,49 @@ sudo -u developer ./command
 
 ### File Permissions
 
-The development environment automatically manages permissions:
-- Source files (*.cpp, *.h): owned by developer (644)
-- Build directories: owned by developer (755)
-- Shell scripts: owned by developer, executable only by developer (700)
-- Compiled binaries: owned by appuser, executable by both users (755) 
+The development environment uses an advanced permission management system split into two components:
+
+#### Initial Setup
+During container creation, `initial-setup.sh` runs once to:
+- Set up the base directory structure with correct permissions
+- Configure the `scripts` directory with SetGID bit (2755)
+- Set initial permissions for all existing files
+- Launch the continuous permission watcher
+
+#### Continuous Permission Management
+A background watcher (`watch-permissions.sh`) automatically maintains permissions:
+- Monitors the `scripts` directory for any changes
+- Automatically sets correct permissions when files are:
+  - Created
+  - Modified
+  - Moved into the directory
+- Makes shell scripts (*.sh) executable (700) automatically
+- Sets appropriate permissions (644) for non-script files
+
+#### Directory Permissions
+The environment maintains specific permissions for each directory type:
+- `scripts/`: 
+  - Directory has SetGID bit (2755)
+  - Shell scripts automatically get 700 (rwx------)
+  - Other files automatically get 644 (rw-r--r--)
+- `src/`: Source files (644) with traversable directories (755)
+- `include/`: Header files (644) with traversable directories (755)
+- `build/`: Build artifacts (755) owned by developer
+- `bin/`: Binaries (755) owned by appuser for deployment testing
+
+#### User Permissions
+- `developer` user:
+  - Owner of all source code and build files
+  - Full sudo privileges for development tasks
+  - Can execute all commands and scripts
+- `appuser` user:
+  - Restricted permissions simulating production
+  - Can only execute compiled binaries
+  - Used for testing deployment scenarios
+
+This setup ensures:
+1. Scripts are always executable without manual intervention
+2. Source code and build files are properly protected
+3. Compiled binaries can be tested with production-like permissions
+4. No manual permission management needed during development
+5. Permissions are maintained automatically, even for newly added files 

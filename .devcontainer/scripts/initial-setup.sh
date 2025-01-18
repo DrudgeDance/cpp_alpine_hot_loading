@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Function to set up proper permissions for development files
-setup_dev_permissions() {
+# Function to set up initial permissions
+setup_initial_permissions() {
     local developer_user="developer"
     local developer_group="developer"
     local service_user="appuser"
@@ -15,16 +15,6 @@ setup_dev_permissions() {
         sudo chmod 2755 scripts/
         # Make all current .sh files executable
         find scripts -type f -name "*.sh" -exec sudo chmod 700 {} \;
-        
-        # Start watching scripts directory in background
-        (
-            while true; do
-                inotifywait -q -e create -e modify scripts/ 2>/dev/null
-                echo "File change detected in scripts directory, updating permissions..."
-                find scripts -type f -name "*.sh" -exec sudo chmod 700 {} \;
-                find scripts -type f -not -name "*.sh" -exec sudo chmod 644 {} \;
-            done
-        ) &
     fi
 
     # Set permissions for build directories and artifacts
@@ -35,10 +25,8 @@ setup_dev_permissions() {
 
     # Set permissions for binary output directories
     if [ -d "bin" ]; then
-        # Developer owns the directory
         sudo chown -R ${developer_user}:${developer_group} bin/
-        # But executables should be runnable by appuser
-        find bin -type f -executable -exec sudo chown ${service_user}:${service_group} {} \; -exec sudo chmod 755 {} \;
+        sudo chmod -R 755 bin/
     fi
 
     # Set source code permissions
@@ -54,11 +42,15 @@ setup_dev_permissions() {
         sudo chmod -R 644 include/
         find include -type d -exec sudo chmod 755 {} \;
     fi
+
+    # Start the permissions watcher in the background
+    if [ -f ".devcontainer/scripts/watch-permissions.sh" ]; then
+        sudo chmod +x .devcontainer/scripts/watch-permissions.sh
+        .devcontainer/scripts/watch-permissions.sh &
+    fi
 }
 
-alias setup-permissions='setup_dev_permissions'
-
-# Run it once when container starts if we're in the workspace
+# Run setup if in workspace
 if [ -d /workspace ]; then
-    cd /workspace && setup_dev_permissions
+    cd /workspace && setup_initial_permissions
 fi 

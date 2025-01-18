@@ -24,7 +24,10 @@ RUN apk update && apk add --no-cache \
     musl-dev \
     boost-dev \
     boost-static \
-    linux-headers
+    linux-headers \
+    # inotify-tools: Used to watch the scripts directory for changes and automatically set correct permissions
+    # This ensures any new or modified shell scripts are automatically made executable for the developer
+    inotify-tools
 
 # Create and activate virtual environment for conan
 RUN python3 -m venv /opt/venv
