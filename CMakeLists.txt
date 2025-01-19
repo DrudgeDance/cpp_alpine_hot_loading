@@ -33,8 +33,14 @@ target_link_libraries(webserver_core PUBLIC
     dl
 )
 
-# Add main executable
+# Add main executable - Note: removed static linking
 add_executable(webserver src/main.cpp)
+
+# Link with -rdynamic to export symbols for plugins
+set_target_properties(webserver PROPERTIES
+    ENABLE_EXPORTS ON
+    LINK_FLAGS "-rdynamic"
+)
 
 target_link_libraries(webserver PRIVATE
     webserver_core
@@ -75,7 +81,7 @@ set_target_properties(${PLUGIN_NAME} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/endpoints
     OUTPUT_NAME "hello_endpoint_${BUILD_TIMESTAMP}"
     PREFIX "lib"
-    LINK_FLAGS "-Wl,--no-as-needed -Wl,-z,nodelete"
+    LINK_FLAGS "-Wl,--no-as-needed -Wl,-z,nodelete -rdynamic"
     VERSION "${BUILD_NUMBER}.0.0"
     SOVERSION "${BUILD_NUMBER}"
 )

@@ -24,9 +24,17 @@ RUN apk update && apk add --no-cache \
     boost-dev \
     boost-static \
     linux-headers \
+    # Perl and development packages
+    perl \
+    perl-dev \
+    # OpenSSL dependencies
+    zlib-dev \
     # inotify-tools: Used to watch the scripts directory for changes and automatically set correct permissions
     # This ensures any new or modified shell scripts are automatically made executable for the developer
     inotify-tools
+
+# Ensure Perl is in the PATH (set before user switch)
+ENV PATH="/usr/bin:${PATH}"
 
 # Create and activate virtual environment for conan
 RUN python3 -m venv /opt/venv && \
@@ -79,6 +87,4 @@ RUN conan profile detect --force && \
     echo "compiler.version=13" >> ~/.conan2/profiles/default && \
     echo "os=Linux" >> ~/.conan2/profiles/default && \
     echo "[options]" >> ~/.conan2/profiles/default && \
-    echo "*:shared=False" >> ~/.conan2/profiles/default
-
-USER $USERNAME 
+    echo "*:shared=False" >> ~/.conan2/profiles/default 

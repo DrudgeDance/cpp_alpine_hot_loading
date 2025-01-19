@@ -1,10 +1,11 @@
 #!/bin/bash
 set -e
 
-cd /workspaces/auth
+# Change to project root directory
+cd "$(dirname "$0")/.."
 
 echo "Cleaning build artifacts..."
-rm -rf build
+rm -rf build/CMakeFiles
 mkdir -p build
 
 # Initialize counter if it doesn't exist
@@ -16,19 +17,26 @@ echo "Current build counter value:"
 BUILD_NUM=$(cat build_counter.txt)
 echo $BUILD_NUM
 
-echo "Running Conan..."
-cd build
-conan install .. --output-folder . --build=missing
-source conanbuild.sh
+echo "Installing dependencies with conan..."
+conan install . \
+    --output-folder=build \
+    --build=missing \
+    -s build_type=Release \
+    -g "CMakeDeps"
 
 echo "Rebuilding plugin..."
-cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_DEFAULT_CMP0091=NEW -DBUILD_NUMBER=$BUILD_NUM
+cmake -B build -S . \
+    -DCMAKE_TOOLCHAIN_FILE=build/generators/conan_toolchain.cmake \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
+    -DBUILD_NUMBER=$BUILD_NUM \
+    -G "Unix Makefiles"
 
 # Wait for CMake to generate files
 sleep 1
 
 # Get the most recent plugin target name
-PLUGIN_TARGET=$(find CMakeFiles -maxdepth 1 -type d -name 'hello_endpoint_*' | sort -r | head -n1 | xargs basename | sed 's/\.dir$//')
+PLUGIN_TARGET=$(find build/CMakeFiles -maxdepth 1 -type d -name 'hello_endpoint_*' | sort -r | head -n1 | xargs basename | sed 's/\.dir$//')
 
 if [ -z "$PLUGIN_TARGET" ]; then
     echo "Error: Could not find plugin target"
@@ -36,13 +44,10 @@ if [ -z "$PLUGIN_TARGET" ]; then
 fi
 
 echo "Building target: $PLUGIN_TARGET"
-cmake --build . --target "$PLUGIN_TARGET" -j$(nproc)
+cmake --build build --target "$PLUGIN_TARGET" -j$(nproc)
 
 # Only increment counter after successful build
-echo $((BUILD_NUM + 1)) > ../build_counter.txt
-
-source deactivate_conanbuild.sh
-cd ..
+echo $((BUILD_NUM + 1)) > build_counter.txt
 
 echo "New build counter value:"
 cat build_counter.txt
