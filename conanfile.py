@@ -1,7 +1,7 @@
 from conan import ConanFile
 from conan.tools.cmake import CMake, CMakeToolchain
 
-class YourAppConan(ConanFile):
+class AlpineAppConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     generators = "CMakeDeps"
     options = {
@@ -15,8 +15,12 @@ class YourAppConan(ConanFile):
     }
 
     def requirements(self):
-        self.requires("boost/1.83.0", options={
+        self.requires("boost/1.84.0", options={
             "without_log": False,  # Enable log (includes log_setup)
+            "shared": False,
+        })
+        self.requires("openssl/3.2.0", options={
+            "shared": False,
         })
 
     def config_options(self):

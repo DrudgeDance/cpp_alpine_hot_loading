@@ -1,52 +1,22 @@
 #!/bin/bash
-set -e
 
-# Change to project root directory
-cd "$(dirname "$0")/.."
+# Install dependencies with Conan
+conan install . --output-folder=build --build=missing
 
-# Clean directories
-rm -rf build bin
-mkdir -p build/generators build/lib build/obj bin
+# Source the Conan environment
+cd build
+source conanbuild.sh
 
-echo "Installing dependencies with conan..."
-conan install . \
-    --output-folder=build \
-    --build=missing \
-    -s build_type=Release \
-    -g "CMakeDeps"
-
-echo "Configuring with CMake..."
-cmake -B build -S . \
-    -DCMAKE_TOOLCHAIN_FILE=build/generators/conan_toolchain.cmake \
+# Configure CMake using the toolchain file and proper module paths
+cmake .. \
+    -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake \
     -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-    -DCMAKE_EXE_LINKER_FLAGS="-static" \
-    -DCMAKE_FIND_LIBRARY_SUFFIXES=".a" \
-    -DBUILD_SHARED_LIBS=OFF \
-    -G "Unix Makefiles"
+    -DCMAKE_MODULE_PATH=$(pwd) \
+    -DCMAKE_PREFIX_PATH=$(pwd)
 
-echo "Building..."
-cmake --build build
+# Build the project
+cmake --build . -j$(nproc)
 
-echo "Build complete! Binary is at bin/your_app"
-
-echo -e "\nChecking if binary is statically linked:"
-cd bin
-if ! ldd your_app &> /dev/null; then
-    echo "Success: Binary appears to be fully static!"
-    
-    echo -e "\nTesting application with appuser permissions:"
-    # Run as appuser (using full command instead of alias)
-    if ! sudo -u appuser ./your_app; then
-        echo "Error: Application crashed when running as appuser!"
-        cd ..
-        exit 1
-    fi
-    cd ..
-else
-    echo "Warning: Binary might not be fully static!"
-    cd ..
-    exit 1
-fi
-
-echo -e "\nAll tests passed successfully!" 
+# Deactivate Conan environment
+source deactivate_conanbuild.sh
+cd .. 
