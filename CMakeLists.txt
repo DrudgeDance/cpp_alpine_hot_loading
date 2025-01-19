@@ -6,11 +6,13 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS system log log_setup)
 
 add_executable(your_app src/main.cpp)
 target_link_libraries(your_app PRIVATE 
     Boost::system
+    Boost::log
+    Boost::log_setup
     Boost::headers
 )
 
