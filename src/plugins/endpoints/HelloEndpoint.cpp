@@ -11,7 +11,7 @@
 #define STRINGIZE_VALUE_OF(x) STRINGIZE(x)
 
 // This string will change with each build, using CMake-provided values
-#define BUILD_INFO_STR "Build #" STRINGIZE_VALUE_OF(BUILD_NUMBER) " - " BUILD_TIMESTAMP
+#define BUILD_INFO_STR ("Build #" STRINGIZE_VALUE_OF(BUILD_NUMBER) " - " STRINGIZE_VALUE_OF(BUILD_TIMESTAMP))
 
 namespace plugins {
 namespace endpoint {
