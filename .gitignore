@@ -66,8 +66,10 @@ CTestTestfile.cmake
 *.swp
 *.swo
 .gdb_history
-core
-core.*
+# Core dumps but not src/core directory
+/core
+/core.*
+**/core.[0-9]*
 
 # Windows specific
 Thumbs.db
