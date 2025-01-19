@@ -3,6 +3,7 @@ build/
 bin/
 out/
 cmake-build-*/
+build_counter.txt
 
 # Conan generated files
 CMakeUserPresets.json
