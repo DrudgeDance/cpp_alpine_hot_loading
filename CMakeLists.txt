@@ -9,7 +9,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 # Find dependencies
 find_package(Boost REQUIRED COMPONENTS 
     log 
-    log_setup 
     thread 
     system 
     filesystem 
@@ -25,6 +24,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+# Removed dynamic linking definitions since as static linking is used
+# add_definitions(
+#     -DBOOST_LOG_DYN_LINK
+#     -DBOOST_ALL_DYN_LINK
+# )
+
 # Add core library
 add_library(webserver_core STATIC
     src/core/DynamicLoader.cpp
@@ -39,7 +44,6 @@ target_include_directories(webserver_core PUBLIC
 target_link_libraries(webserver_core PUBLIC
     Boost::boost
     Boost::log
-    Boost::log_setup
     Boost::thread
     Boost::system
     Boost::filesystem
@@ -50,9 +54,10 @@ target_link_libraries(webserver_core PUBLIC
     OpenSSL::SSL
     OpenSSL::Crypto
     dl
+    -lboost_log_setup
 )
 
-# Add main executable - Note: removed static linking
+# Add main executable
 add_executable(webserver src/main.cpp)
 
 # Link with -rdynamic to export symbols for plugins

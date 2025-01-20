@@ -23,10 +23,16 @@ class AlpineAppConan(ConanFile):
             "without_regex": False,  # Required for logging
             "without_chrono": False,  # Required for logging
             "without_atomic": False,  # Required for logging
-            "shared": False,
+            "shared": False,  # Force static linking
+            "header_only": False,  # Ensure we build the libraries
+            "error_code_header_only": False,
+            "system_no_deprecated": False,
+            "asio_no_deprecated": False,
+            "filesystem_no_deprecated": False,
+            "visibility": "hidden"
         })
         self.requires("openssl/3.2.0", options={
-            "shared": False,
+            "shared": False,  # Force static linking
         })
 
     def config_options(self):
@@ -54,4 +60,8 @@ class AlpineAppConan(ConanFile):
     def build(self):
         cmake = CMake(self)
         cmake.configure()
-        cmake.build() 
+        cmake.build()
+
+    def package_info(self):
+        # Declare boost_log_setup as a system library
+        self.cpp_info.system_libs.append("boost_log_setup") 

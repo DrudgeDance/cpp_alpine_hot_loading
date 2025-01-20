@@ -14,10 +14,13 @@
                 "ms-python.vscode-pylance"
             ],
             "settings": {
+                // Python settings
                 "python.defaultInterpreterPath": "/opt/venv/bin/python",
                 "python.analysis.extraPaths": [
                     "/opt/venv/lib/python3.12/site-packages"
                 ],
+                
+                // C++ settings
                 "C_Cpp.default.compilerPath": "/usr/bin/g++",
                 "C_Cpp.default.cppStandard": "c++17",
                 "C_Cpp.default.intelliSenseMode": "linux-gcc-arm64",
@@ -26,13 +29,35 @@
                     "${workspaceFolder}/**",
                     "${workspaceFolder}/build/generators/**"
                 ],
+
+                // CMake basic settings
                 "cmake.configureSettings": {
                     "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
                     "CMAKE_TOOLCHAIN_FILE": "${workspaceFolder}/build/generators/conan_toolchain.cmake"
                 },
-                "cmake.defaultPreset": "conan-release",
                 "cmake.buildDirectory": "${workspaceFolder}/build",
-                "cmake.configureOnOpen": true
+                
+                // CMake preset configuration
+                "cmake.defaultPreset": "conan-release",      // Default preset to use
+                "cmake.configurePreset": "conan-release",    // Explicitly set configure preset
+                "cmake.buildPreset": "conan-release",        // Explicitly set build preset
+                
+                // CMake behavior settings
+                "cmake.configureOnOpen": true,               // Configure when opening a project
+                "cmake.autoSelectActiveFolder": false,       // Don't prompt for folder selection
+                "cmake.ignoreCMakeListsMissing": true,      // Don't warn about missing CMakeLists.txt
+                "cmake.configureOnEdit": false,             // Don't reconfigure on every edit
+                "cmake.automaticReconfigure": false,        // Don't automatically reconfigure
+                "cmake.skipConfigureIfCachePresent": true,  // Use cache if available
+                
+                // CMake preset file locations
+                // Order matters: first file found will be used
+                "cmake.presetFile": [
+                    // Primary: Use Conan-generated presets when available (after first build)
+                    "${workspaceFolder}/build/generators/CMakePresets.json",
+                    // Fallback: Use our root presets when build directory doesn't exist yet
+                    "${workspaceFolder}/CMakePresets.json"
+                ]
             }
         }
     },
