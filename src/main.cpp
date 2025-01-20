@@ -15,6 +15,7 @@
 #include <filesystem>
 
 #include "core/PluginManager.hpp"
+#include "core/Logger.hpp"
 #include "plugins/endpoints/EndpointPlugin.hpp"
 
 namespace beast = boost::beast;
@@ -296,18 +297,26 @@ private:
 
 int main(int argc, char* argv[])
 {
+    // Initialize logging
+    core::Logger::init("webserver.log");
+    LOG_INFO << "Starting web server...";
+
     // Check command line arguments.
     if (argc != 4)
     {
-        std::cerr <<
-            "Usage: http-server-async <address> <port> <threads>\n" <<
-            "Example:\n" <<
-            "    http-server-async 0.0.0.0 8080 1\n";
+        LOG_ERROR << "Usage: http-server-async <address> <port> <threads>";
+        LOG_ERROR << "Example: http-server-async 0.0.0.0 8080 1";
         return EXIT_FAILURE;
     }
+
     auto const address = net::ip::make_address(argv[1]);
     auto const port = static_cast<unsigned short>(std::atoi(argv[2]));
     auto const threads = std::max<int>(1, std::atoi(argv[3]));
+
+    LOG_INFO << "Server configuration:"
+             << " address=" << address
+             << " port=" << port
+             << " threads=" << threads;
 
     // Create required directories
     std::filesystem::create_directories("endpoints");

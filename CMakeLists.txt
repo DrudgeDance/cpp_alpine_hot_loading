@@ -7,7 +7,17 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 # Find dependencies
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS 
+    log 
+    log_setup 
+    thread 
+    system 
+    filesystem 
+    date_time
+    regex
+    chrono
+    atomic
+)
 find_package(OpenSSL REQUIRED)
 
 # Set C++ standard
@@ -28,6 +38,15 @@ target_include_directories(webserver_core PUBLIC
 
 target_link_libraries(webserver_core PUBLIC
     Boost::boost
+    Boost::log
+    Boost::log_setup
+    Boost::thread
+    Boost::system
+    Boost::filesystem
+    Boost::date_time
+    Boost::regex
+    Boost::chrono
+    Boost::atomic
     OpenSSL::SSL
     OpenSSL::Crypto
     dl

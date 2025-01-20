@@ -17,6 +17,12 @@ class AlpineAppConan(ConanFile):
     def requirements(self):
         self.requires("boost/1.84.0", options={
             "without_log": False,  # Enable log (includes log_setup)
+            "without_thread": False,  # Required for logging
+            "without_filesystem": False,  # Required for logging
+            "without_date_time": False,  # Required for logging
+            "without_regex": False,  # Required for logging
+            "without_chrono": False,  # Required for logging
+            "without_atomic": False,  # Required for logging
             "shared": False,
         })
         self.requires("openssl/3.2.0", options={
